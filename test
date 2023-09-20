@@ -1,0 +1,85 @@
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.text.DecimalFormat;
+
+public class Main {
+    public static void main(String[] args) {
+        // 从命令行参数获取文件路径
+        String originalFile = args[0];
+        String plagiarizedFile = args[1];
+        String outputFile = args[2];
+
+        try {
+            // 读取原文和抄袭版论文的内容
+            String originalContent = readFile(originalFile);
+            String plagiarizedContent = readFile(plagiarizedFile);
+
+            // 去除标点符号和多余空格
+            originalContent = preprocessText(originalContent);
+            plagiarizedContent = preprocessText(plagiarizedContent);
+
+            // 计算重复率
+            double plagiarismRate = calculatePlagiarismRate(originalContent, plagiarizedContent);
+
+            // 格式化重复率并将结果写入答案文件
+            writeResult(outputFile, formatPlagiarismRate(plagiarismRate));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // 使用指定的编码读取文件内容并返回字符串
+    private static String readFile(String filePath) throws IOException {
+        StringBuilder content = new StringBuilder();
+        try (BufferedReader br = new BufferedReader(new FileReader(filePath, StandardCharsets.UTF_8))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                content.append(line).append("\n");
+            }
+        }
+        return content.toString();
+    }
+
+    // 预处理文本，去除标点符号和多余空格，并转为小写
+    private static String preprocessText(String text) {
+        return text.replaceAll("[^a-zA-Z0-9\\s]", "")
+                .replaceAll("\\s+", " ")
+                .toLowerCase();
+    }
+
+    // 计算重复率
+    private static double calculatePlagiarismRate(String original, String plagiarized) {
+        String[] originalWords = original.split("\\s");
+        String[] plagiarizedWords = plagiarized.split("\\s");
+
+        int totalWords = Math.max(originalWords.length, plagiarizedWords.length);
+        int matchingWords = 0;
+        for (String originalWord : originalWords) {
+            for (String plagiarizedWord : plagiarizedWords) {
+                if (originalWord.equals(plagiarizedWord)) {
+                    matchingWords++;
+                    break;
+                }
+            }
+        }
+
+        return (double) matchingWords / totalWords;
+    }
+
+    // 格式化重复率，并将结果写入答案文件
+    private static void writeResult(String filePath, String plagiarismRate) throws IOException {
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter(filePath, StandardCharsets.UTF_8))) {
+            bw.write("重复率：" + plagiarismRate);
+        }
+    }
+
+    // 格式化重复率为小数点后两位
+    private static String formatPlagiarismRate(double plagiarismRate) {
+        DecimalFormat df = new DecimalFormat("#.00");
+        return df.format(plagiarismRate * 100) + "%";
+    }
+}
